@@ -30,6 +30,20 @@ def load_dataset():
   return dataset
 
 
+def load_preprocessed_dataset(filename):
+  f = open(filename, 'r')
+  dataset = []
+  for line in f:
+    classification, character = line.strip().split(' ')
+    character = np.array(character.split(','))
+    dataset.append((character, int(classification)))
+
+  X = np.array([e[0] for e in dataset])
+  y = np.array([e[1] for e in dataset])
+
+  return X, y
+
+
 def resize_images(dataset, width, height):
   return [(imresize(ch, (width, height)), cl) for ch, cl in dataset]
 
