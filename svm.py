@@ -27,7 +27,7 @@ X = np.zeros((numex, numpixels))
 Y = []
 
 # i got the mungies real bad 
-with open('ml2013final_train.dat') as fin: 
+with open('data/ml2013final_train.dat') as fin: 
 	index = 0 # index 
 	for line in fin.readlines()[:numex]: 
 		line = line.strip().split()
