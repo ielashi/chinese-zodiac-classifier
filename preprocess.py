@@ -44,6 +44,33 @@ def load_preprocessed_dataset(filename):
   return X, y
 
 
+def crop_bounding_box(dataset):
+  new_dataset = []
+  for character, _ in dataset:
+    B = np.argwhere(character)
+    try:
+      (ystart, xstart), (ystop, xstop) = B.min(0), B.max(0) + 1
+      character = character[ystart:ystop, xstart:xstop]
+      new_dataset.append((character, _))
+    except:
+      # something is wrong with the image (empty image?)
+      pass    # ignore it
+
+  return new_dataset
+
+
+def make_binary(dataset, threshold=10):
+  new_dataset = []
+
+  for character, _ in dataset:
+    character[character < threshold] = 0
+    character[character >= threshold] = 1
+
+    new_dataset.append((character, _))
+
+  return new_dataset
+
+
 def resize_images(dataset, width, height):
   return [(imresize(ch, (width, height)), cl) for ch, cl in dataset]
 
