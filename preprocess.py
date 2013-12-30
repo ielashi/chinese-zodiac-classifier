@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
 
-def load_dataset():
-  f = open('data/ml2013final_train.dat', 'r')
+def load_dataset(filename):
+  f = open(filename, 'r')
 
   dataset = []
 
@@ -55,7 +55,8 @@ def crop_bounding_box(dataset):
       new_dataset.append((character, _))
     except:
       # something is wrong with the image (empty image?)
-      pass    # ignore it
+      # add image as is
+      new_dataset.append((character, _))
 
   return new_dataset
 
@@ -79,3 +80,18 @@ def resize_images(dataset, width, height):
 def output_dataset(dataset):
   for character, class_ in dataset:
     print class_, ','.join(['%f' % num for num in character.ravel()])
+
+
+def preprocess(filename):
+  dataset = load_dataset(filename)
+  print len(dataset)
+  print 'cropping..'
+  dataset = crop_bounding_box(dataset)
+  print 'resizing'
+  dataset = resize_images(dataset, 28, 28)
+  print 'done'
+
+  X = [e[0].ravel() for e in dataset]
+  y = [e[1] for e in dataset]
+
+  return X, y
