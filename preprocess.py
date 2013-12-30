@@ -84,12 +84,8 @@ def output_dataset(dataset):
 
 def preprocess(filename):
   dataset = load_dataset(filename)
-  print len(dataset)
-  print 'cropping..'
   dataset = crop_bounding_box(dataset)
-  print 'resizing'
   dataset = resize_images(dataset, 28, 28)
-  print 'done'
 
   X = [e[0].ravel() for e in dataset]
   y = [e[1] for e in dataset]
