@@ -12,16 +12,17 @@ def load_dataset():
   f = open('data/ml2013final_train.dat', 'r')
 
   dataset = []
+
   for line in f:
     data = line.strip().split(' ')
     classification = data[0]
     features = data[1:]
 
-    character = np.array([0] * 12810)
+    character = np.array([0.] * 12810)
 
     for feature in features:
       (i, feature_value) = feature.split(':')
-      character[int(i) - 1] = floor(float(feature_value) * 256)
+      character[int(i) - 1] = float(feature_value)
 
     character = character.reshape(122, 105)
 
@@ -35,7 +36,7 @@ def load_preprocessed_dataset(filename):
   dataset = []
   for line in f:
     classification, character = line.strip().split(' ')
-    character = np.array(character.split(','))
+    character = np.array([float(i) for i in character.split(',')])
     dataset.append((character, int(classification)))
 
   X = np.array([e[0] for e in dataset])
@@ -72,9 +73,9 @@ def make_binary(dataset, threshold=10):
 
 
 def resize_images(dataset, width, height):
-  return [(imresize(ch, (width, height)), cl) for ch, cl in dataset]
+  return [(imresize(ch, (width, height)) / 256.0, cl) for ch, cl in dataset]
 
 
 def output_dataset(dataset):
   for character, class_ in dataset:
-    print class_, ','.join(['%d' % num for num in dataset[0][0].ravel()])
+    print class_, ','.join(['%f' % num for num in character.ravel()])
