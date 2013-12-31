@@ -130,7 +130,7 @@ def shared_dataset(data_xy):
 
 
 def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
-                    dataset='ml2013final_train.dat',
+                    dataset='data/ml2013final_train.dat',
                     nkerns=[20, 50], batch_size=500):
     """ Demonstrates lenet on MNIST dataset
 
@@ -154,29 +154,20 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
 
     # get validation set
     length = Y.owner.inputs[0].get_value(borrow=True).shape[0]
-    kf = KFold(length, n_folds=3) # keep 2/3 for training and 1/3 for validation and testing
-    for i, (train_index, valtest_index) in enumerate(kf):
+    kf = KFold(length, n_folds=5) # keep 80% for training and 20% for validation (test set = validation set here)
+    for i, (train_index, valid_index) in enumerate(kf):
         if i == 0: 
-            train_set_x, valtest_set_x = X[train_index], X[valtest_index] 
-            train_set_y, valtest_set_y = Y[train_index], Y[valtest_index]
+            train_set_x, valid_set_x = X[train_index], X[valid_index] 
+            train_set_y, valid_set_y = Y[train_index], Y[valid_index]
             train_set_x = theano.shared(numpy.asarray(train_set_x.eval(), dtype=theano.config.floatX))
             train_set_y = theano.shared(numpy.asarray(train_set_y.eval(), dtype=theano.config.floatX))
             train_set_y = T.cast(train_set_y, 'int32')
-            valtest_set_x = theano.shared(numpy.asarray(valtest_set_x.eval(), dtype=theano.config.floatX))
-            valtest_set_y = theano.shared(numpy.asarray(valtest_set_y.eval(), dtype=theano.config.floatX))
-            valtest_set_y = T.cast(valtest_set_y, 'int32')
-    valtest_length = valtest_set_y.owner.inputs[0].get_value(borrow=True).shape[0] 
-    kf2 = KFold(valtest_length, n_folds=2) # break validation set into validation set and test set 
-    for i, (valid_index, test_index) in enumerate(kf2): 
-        if i == 0: 
-            valid_set_x, test_set_x = valtest_set_x[valid_index], valtest_set_x[test_index]
-            valid_set_y, test_set_y = valtest_set_y[valid_index], valtest_set_y[test_index]
             valid_set_x = theano.shared(numpy.asarray(valid_set_x.eval(), dtype=theano.config.floatX))
             valid_set_y = theano.shared(numpy.asarray(valid_set_y.eval(), dtype=theano.config.floatX))
             valid_set_y = T.cast(valid_set_y, 'int32')
-            test_set_x = theano.shared(numpy.asarray(test_set_x.eval(), dtype=theano.config.floatX))
-            test_set_y = theano.shared(numpy.asarray(test_set_y.eval(), dtype=theano.config.floatX))
-            test_set_y = T.cast(test_set_y, 'int32')
+            # set test set = validation set 
+            test_set_x = valid_set_x
+            test_set_y = valid_set_y
 
     # compute number of minibatches for training, validation and testing
     n_train_batches = train_set_x.get_value(borrow=True).shape[0]
