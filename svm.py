@@ -1,65 +1,88 @@
 import numpy as np 
+import math
 import sklearn
 from sklearn.svm import SVC
 from sklearn.cross_validation import KFold
-from sklearn.multiclass import OneVsOneClassifier
 import scipy 
 from scipy.sparse import csr_matrix, linalg
+import os
 
-# gabor filter equation
-def G(x,y,lamda,theta,psi,sigma,gamma): 
-	xprime = x*np.sin(theta) + y*np.sin(theta)
-	yprime = -x*np.sin(theta) + y*np.cos(theta)
-	return np.exp(-(xprime**2 + (gamma*yprime)**2)/(2*sigma**2))*np.exp(complex(0,1)*(2*np.pi*xprime/lamda + psi))
+from preprocess import *
 
 # define constants
-numex = 6144 # number of examples = 6144 
-numpixels = 13000 # number of pixels we are using
-K = 5 # folds for cross-validation
-psi = 0.
-lamda = 8.
-sigma = np.pi
-gamma = 1.
-threshold = .05 # threshold below which pixel values are considered to be noise 
+K = 5 # number of folds for cross-validation
 
+def make_binary(X, threshold=.10):
+  new_X = []
+  for character in X:
+    character[character < threshold] = 0.
+    character[character >= threshold] = 1.
+    new_X.append(character.flatten())
+  return new_X
+
+# load data 
+print "Loading data..."
+dataset = load_dataset('data/ml2013final_train.dat')
+dataset = crop_bounding_box(dataset)
+dataset = resize_images(dataset, 50, 50)
 # initialize vectors to hold data 
-X = np.zeros((numex, numpixels))
+X = []
 Y = []
-
-# i got the mungies real bad 
-with open('data/ml2013final_train.dat') as fin: 
-	index = 0 # index 
-	for line in fin.readlines()[:numex]: 
-		line = line.strip().split()
-		if len(line) < 20: 
-			pass
-		else: 
-			Y.append(int(line[0])) # append class label to the Y vector 
-			for pixel in line[1:]: 
-				key, value = pixel.strip().split(':')
-				key, value = int(key), float(value)
-				if value >= threshold:
-					X[index][key] = 1.
-			index += 1
-X = csr_matrix(X[:index])
+for pair in dataset: 
+	(pixels, label) = pair 
+	X.append(pixels.flatten())
+	Y.append(label)
+X = np.array(make_binary(X))
 Y = np.array(Y)
+print X 
+print Y
+print "Done."
 
 # classify
-clf = SVC(C=2., kernel='poly', degree=9, gamma=1./512., coef0=1) # classifier
+print "Classifying..."
+clf = SVC(C=2., kernel='poly', degree=12, gamma=1./4096., coef0=1.) 
 preds = clf.fit(X, Y).predict(X)
+print "Done."
+print "Computing E_in..."
 errors = [preds[j] == Y[j] for j in xrange(len(Y))].count(False)
 E_in = float(errors)/float(len(Y))
 print "E_in", E_in
+print "Done."
 
-# classify with cross-validation 
+# predict for test set 
+# load test data 
+print "Loading test data..."
+dataset = load_test_dataset('data/ml2013final_test1.nolabel.dat')
+dataset = crop_bounding_box(dataset)
+dataset = resize_images(dataset, 50, 50)
+test_X = []
+test_Y = []
+for pair in dataset: 
+	(pixels, label) = pair 
+	test_X.append(pixels.flatten())
+test_X = np.array(make_binary(test_X))
+print "Done."
+print "Making test predictions..."
+test_preds = clf.predict(test_X)
+print test_preds
+with open('%s_preds.txt' % str(os.path.basename(__file__)).split('.')[0], 'w') as fout: 
+	for y in test_preds: 
+		fout.write(str(y)+'\n')
+print "Done."
+
+# cross-validate
+print "Cross-validating..."
 kf = KFold(len(Y), n_folds=K)
 E_CV_array = [] 
 for train_index, test_index in kf: 
 	X_train, X_test = X[train_index], X[test_index] 
 	Y_train, Y_test = Y[train_index], Y[test_index]
+	X_train = make_binary(X_train)
+	X_test = make_binary(X_test)
 	clf.fit(X_train, Y_train)
 	preds = clf.predict(X_test)
 	this_iter_error = float([preds[i] == Y_test[i] for i in xrange(len(Y_test))].count(False))/float(len(Y_test))
 	E_CV_array.append(this_iter_error)
 E_CV = 1./float(K)*float(sum(E_CV_array))
 print "E_CV:", E_CV
+print "Done."

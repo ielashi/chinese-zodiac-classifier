@@ -17,7 +17,29 @@ def load_dataset(filename):
     data = line.strip().split(' ')
     classification = data[0]
     features = data[1:]
+    if len(features) >= 20:
+      character = np.array([0.] * 12810)
 
+      for feature in features:
+        (i, feature_value) = feature.split(':')
+        character[int(i) - 1] = float(feature_value)
+
+      character = character.reshape(122, 105)
+
+      dataset.append((character, classification))
+
+  return dataset
+
+
+def load_test_dataset(filename):
+  f = open(filename, 'r')
+
+  dataset = []
+
+  for line in f:
+    data = line.strip().split(' ')
+    classification = data[0]
+    features = data[1:]
     character = np.array([0.] * 12810)
 
     for feature in features:
@@ -29,7 +51,6 @@ def load_dataset(filename):
     dataset.append((character, classification))
 
   return dataset
-
 
 def load_preprocessed_dataset(filename):
   f = open(filename, 'r')
@@ -84,6 +105,16 @@ def output_dataset(dataset):
 
 def preprocess(filename):
   dataset = load_dataset(filename)
+  dataset = crop_bounding_box(dataset)
+  dataset = resize_images(dataset, 28, 28)
+
+  X = [e[0].ravel() for e in dataset]
+  y = [e[1] for e in dataset]
+
+  return X, y
+
+def test_preprocess(filename):
+  dataset = load_test_dataset(filename)
   dataset = crop_bounding_box(dataset)
   dataset = resize_images(dataset, 28, 28)
 

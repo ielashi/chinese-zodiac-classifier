@@ -12,28 +12,26 @@ from pybrain.utilities import percentError
 
 # define constants
 numex = 6144 # number of examples = 6144 
-K = 5 # folds for cross-validation
+numpixels = 12810 # number of pixels per example 
 threshold = .05 # threshold below which pixel values are considered to be noise 
-numpixels = 13000 # number of pixels per example 
 numlayers = 6 # number of hidden layers to use in neural net 
 numclasses = 12 # number of classes for classification 
+K = 5 # number of folds for cross-validation
 
 # initialize vectors to hold data 
 X = np.zeros((numex, numpixels))
 Y = []
 
 # i got the mungies real bad 
-with open('ml2013final_train.dat') as fin: 
+with open('data/ml2013final_train.dat') as fin: 
 	index = 0 # index 
 	for line in fin.readlines()[:numex]: 
 		line = line.strip().split()
-		if len(line) < 20: 
-			pass
-		else: 
+		if len(line) > 20: 
 			Y.append(int(line[0])) # append class label to the Y vector 
 			for pixel in line[1:]: 
 				key, value = pixel.strip().split(':')
-				key, value = int(key), float(value)
+				key, value = int(key)-1, float(value)
 				if value >= threshold:
 					X[index][key] = value
 			index += 1
