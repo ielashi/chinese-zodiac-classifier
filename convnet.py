@@ -1,25 +1,9 @@
-"""This tutorial introduces the LeNet5 neural network architecture
-using Theano.  LeNet5 is a convolutional neural network, good for
-classifying images. This tutorial shows how to build the architecture,
-and comes with all the hyper-parameters you need to reproduce the
-paper's MNIST results.
+"""
+This program builds, trains, and optimizes a convolutional neural net for classifying 
+handwritten Chinese text, in this case of the 12 characters in the Chinese zodiac.
 
-
-This implementation simplifies the model in the following ways:
-
- - LeNetConvPool doesn't implement location-specific gain and bias parameters
- - LeNetConvPool doesn't implement pooling by average, it implements pooling
-   by max.
- - Digit classification is implemented with a logistic regression rather than
-   an RBF network
- - LeNet5 was not fully-connected convolutions at second layer
-
-References:
- - Y. LeCun, L. Bottou, Y. Bengio and P. Haffner:
-   Gradient-Based Learning Applied to Document
-   Recognition, Proceedings of the IEEE, 86(11):2278-2324, November 1998.
-   http://yann.lecun.com/exdb/publis/pdf/lecun-98.pdf
-
+It is adapted from the LeNet5 neural net available at http://deeplearning.net/tutorial/lenet.html, 
+which is built on the LeNet5 neural network architecture using Theano.
 """
 import cPickle
 import gzip
@@ -129,8 +113,8 @@ def shared_dataset(data_xy):
 
 
 
-def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
-                    dataset='data/ml2013final_train.dat',
+def evaluate_lenet5(learning_rate=.1, n_epochs=200,
+                    dataset='ml2013final_train.dat',
                     nkerns=[20, 50], batch_size=500):
     """ Demonstrates lenet on MNIST dataset
 
@@ -147,6 +131,7 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
     :type nkerns: list of ints
     :param nkerns: number of kernels on each layer
     """
+    print "learning_rate = ", learning_rate
 
     rng = numpy.random.RandomState(23455)
 
@@ -183,7 +168,7 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
     y = T.ivector('y')  # the labels are presented as 1D vector of
                         # [int] labels
 
-    ishape = (28, 28)  # this is the size of MNIST images
+    ishape = (28, 28)  # this is the size of the image 
 
     ######################
     # BUILD ACTUAL MODEL #
@@ -220,7 +205,7 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
                          n_out=500, activation=T.tanh)
 
     # classify the values of the fully-connected sigmoidal layer
-    layer3 = LogisticRegression(input=layer2.output, n_in=500, n_out=13)
+    layer3 = LogisticRegression(input=layer2.output, n_in=500, n_out=12)
 
     # the cost we minimize during training is the NLL of the model
     cost = layer3.negative_log_likelihood(y)
@@ -321,6 +306,13 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
                           (epoch, minibatch_index + 1, n_train_batches,
                            test_score * 100.))
 
+                    if epoch > 30:
+                       # Save the model
+                       print 'saving model..'
+                       save_file = open('cnn_%s.txt' % epoch, 'wb')
+                       cPickle.dump(params, save_file, -1)
+                       save_file.close()
+
             if patience <= iter:
                 done_looping = True
                 break
@@ -339,4 +331,4 @@ if __name__ == '__main__':
 
 
 def experiment(state, channel):
-    evaluate_lenet5(state.learning_rate, dataset=state.dataset)
+    evaluate_lenet5(learning_rate=state.learning_rate, dataset=state.dataset)
