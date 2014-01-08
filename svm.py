@@ -1,3 +1,7 @@
+"""
+This is a support vector machine classifier for handwritten Chinese text.
+"""
+
 import numpy as np 
 import math
 import sklearn
@@ -12,19 +16,11 @@ from preprocess import *
 # define constants
 K = 5 # number of folds for cross-validation
 
-def make_binary(X, threshold=.10):
-  new_X = []
-  for character in X:
-    character[character < threshold] = 0.
-    character[character >= threshold] = 1.
-    new_X.append(character.flatten())
-  return new_X
-
 # load data 
 print "Loading data..."
 dataset = load_dataset('data/ml2013final_train.dat')
 dataset = crop_bounding_box(dataset)
-dataset = resize_images(dataset, 50, 50)
+dataset = resize_images(dataset, 40, 40)
 # initialize vectors to hold data 
 X = []
 Y = []
@@ -40,7 +36,7 @@ print "Done."
 
 # classify
 print "Classifying..."
-clf = SVC(C=2., kernel='poly', degree=12, gamma=1./4096., coef0=1.) 
+clf = SVC(C=2., kernel='poly', degree=11, gamma=1./2048., coef0=1) 
 preds = clf.fit(X, Y).predict(X)
 print "Done."
 print "Computing E_in..."
@@ -52,9 +48,9 @@ print "Done."
 # predict for test set 
 # load test data 
 print "Loading test data..."
-dataset = load_test_dataset('data/ml2013final_test1.nolabel.dat')
+dataset = load_dataset('data/ml2013final_test1.nolabel.dat')
 dataset = crop_bounding_box(dataset)
-dataset = resize_images(dataset, 50, 50)
+dataset = resize_images(dataset, 40, 40)
 test_X = []
 test_Y = []
 for pair in dataset: 
@@ -65,6 +61,7 @@ print "Done."
 print "Making test predictions..."
 test_preds = clf.predict(test_X)
 print test_preds
+# write to file
 with open('%s_preds.txt' % str(os.path.basename(__file__)).split('.')[0], 'w') as fout: 
 	for y in test_preds: 
 		fout.write(str(y)+'\n')
@@ -82,6 +79,7 @@ for train_index, test_index in kf:
 	clf.fit(X_train, Y_train)
 	preds = clf.predict(X_test)
 	this_iter_error = float([preds[i] == Y_test[i] for i in xrange(len(Y_test))].count(False))/float(len(Y_test))
+	print "this_iter_error", this_iter_error
 	E_CV_array.append(this_iter_error)
 E_CV = 1./float(K)*float(sum(E_CV_array))
 print "E_CV:", E_CV
